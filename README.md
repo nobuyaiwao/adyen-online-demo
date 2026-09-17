@@ -1,28 +1,16 @@
 # Adyen Payment Demo
 
-Flask server and static browser demos for Adyen Checkout integrations.
+Static Adyen Checkout demos with a zero-dependency Node.js server that proxies
+Checkout API calls to Adyen.
 
 ## Requirements
 
-- Python 3.8 or later
+- Node.js 20 or later
 - An Adyen API key, client key, and merchant account
 
 ## Run locally
 
-1. Create and activate a virtual environment:
-
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Create a `.env` file:
+1. Create a `.env` file:
 
    ```dotenv
    ADYEN_ENVIRONMENT=test
@@ -36,20 +24,32 @@ Flask server and static browser demos for Adyen Checkout integrations.
    For live payments, set `ADYEN_ENVIRONMENT=live` and provide
    `ENDPOINT_PREFIX`.
 
-4. Start the application:
+2. Start the application:
 
    ```bash
-   python server.py
+   node --env-file=.env server.js
    ```
 
    Open http://localhost:3000.
 
-## Production
+## Heroku
 
-Run the application with Gunicorn:
+This repository needs no npm dependencies. Heroku detects the Node.js runtime
+from `package.json` and runs `web: node server.js` from the `Procfile`.
+
+Set the required environment variables as Heroku config vars:
 
 ```bash
-gunicorn server:app
+heroku config:set ADYEN_ENVIRONMENT=test
+heroku config:set ADYEN_API_KEY=your_adyen_api_key
+heroku config:set ADYEN_CLIENT_KEY=your_adyen_client_key
+heroku config:set ADYEN_MERCHANT_ACCOUNT=your_merchant_account
+```
+
+To run the Procfile locally with the Heroku CLI:
+
+```bash
+heroku local web -p 3000
 ```
 
 Use publicly valid HTTPS for payment redirects and Apple Pay domain verification.

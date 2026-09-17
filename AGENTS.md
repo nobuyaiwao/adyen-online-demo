@@ -2,7 +2,7 @@
 
 ## Project layout
 
-- `server.py` is the Flask API proxy and static-file server.
+- `server.js` is the Node.js API proxy and static-file server.
 - `src/` contains standalone Adyen Checkout demo pages.
 - Each payment-method demo normally has an `index.html` and matching JavaScript file.
 - Shared browser helpers, including `/payments` and `/payments/details` calls, are in `src/util.js`.
@@ -10,10 +10,7 @@
 ## Local development
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python server.py
+node --env-file=.env server.js
 ```
 
 The application listens on port `3000` by default.
@@ -30,4 +27,4 @@ The application listens on port `3000` by default.
 
 - Run `node --check` on modified JavaScript files.
 - Run `git diff --check`.
-- For server changes, parse the file with `python3 -c` or run the Flask test client when dependencies are installed.
+- For server changes, run `node --check server.js` and exercise the affected route.

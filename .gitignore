@@ -1,6 +1,7 @@
 .env
 .herokuconfig
 src/test
+node_modules/
 __pycache__/
 .venv/
 __MACOSX
