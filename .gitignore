@@ -1,7 +1,6 @@
 .env
 .herokuconfig
 src/test
-server/certs/server.key
-server/certs/server.crt
-node_modules/
+__pycache__/
+.venv/
 __MACOSX

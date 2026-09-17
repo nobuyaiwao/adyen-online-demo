@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 hasHolderName: true,
                 enableStoreDetails: true,
                 //hideCVC: true,
-                brands: ['discover', 'mc','visa'],
+                //brands: ['discover', 'mc','visa'],
                 //clickToPayConfiguration: {
                 //    "merchantDisplayName" : "CTP Merchant Name",
                 //    shopperEmail

@@ -20,9 +20,137 @@ const getQueryParam = (param) => {
     return urlParams.get(param);
 };
 
+const showPaymentResult = (result, title = "Payment Result") => {
+    const klarnaContainer = document.getElementById("klarna-container");
+    if (!klarnaContainer) {
+        console.error("Klarna container not found in the DOM.");
+        return;
+    }
+
+    klarnaContainer.innerHTML = `
+        <h2>${title}</h2>
+        <p><strong>Status:</strong> ${result.resultCode || "Unknown"}</p>
+    `;
+};
+
+const KLARNA_US_TEST_CASES = {
+    approved: {
+        email: "customer+us@klarna.com",
+        phone: "+13106683312"
+    },
+    denied: {
+        email: "customer+us+denied@klarna.com",
+        phone: "+13106354386"
+    },
+    "new-user-signup": {
+        email: "customer+us+new_user@klarna.com",
+        phone: "+13105550134"
+    },
+    "id-scan": {
+        email: "customer+us+denied+auth_id_scan@klarna.com",
+        phone: "+13105550124"
+    },
+    "bank-authentication": {
+        email: "customer+us+denied+auth_bank_login@klarna.com",
+        phone: "+13105558963"
+    },
+    "email-verification": {
+        email: "customer+us+denied+auth_otp_email@klarna.com",
+        phone: "+13105558632"
+    },
+    "phone-verification": {
+        email: "customer+us+denied+auth_otp_phone@klarna.com",
+        phone: "+13105558633"
+    },
+    "card-security-code-verification": {
+        email: "customer+us+denied+auth_cvv_entry@klarna.com",
+        phone: "+13105558634"
+    },
+    "rejection-other": {
+        email: "customer+us+reject_reason_other@klarna.com",
+        phone: "+13105558637"
+    },
+    "rejection-identity": {
+        email: "customer+us+reject_reason_could_not_establish_identity@klarna.com",
+        phone: "+13105558636"
+    },
+    "rejection-credit-limit": {
+        email: "customer+us+reject_reason_credit_limit_exceeded@klarna.com",
+        phone: "+13105558638"
+    },
+    "rejection-previous-engagements": {
+        email: "cust+reject_reason_customer_not_fulfilling_previous_engagements@klarna.com",
+        phone: "+13105558639"
+    },
+    "rejection-external-hard": {
+        email: "customer+us+reject_reason_external_hard_reject@klarna.com",
+        phone: "+13105558640"
+    },
+    "rejection-high-risk": {
+        email: "customer+us+reject_reason_high_risk@klarna.com",
+        phone: "+13105558641"
+    },
+    "rejection-legal-restraints": {
+        email: "customer+us+reject_reason_legal_restraints@klarna.com",
+        phone: "+13105558642"
+    },
+    "rejection-technical-error": {
+        email: "customer+us+reject_reason_technical_error@klarna.com",
+        phone: "+13105558643"
+    },
+    "rejection-internal-block": {
+        email: "customer+us+reject_reason_internal_block@klarna.com",
+        phone: "+13105558644"
+    },
+    "rejection-low-credit-rating": {
+        email: "customer+us+reject_reason_low_credit_rating@klarna.com",
+        phone: "+13105558645"
+    },
+    "rejection-under-age": {
+        email: "customer+us+reject_reason_under_age@klarna.com",
+        phone: "+13105558646"
+    },
+    "rejection-denied": {
+        email: "customer+us+reject_reason_denied@klarna.com",
+        phone: "+13105558647"
+    }
+};
+
 // Function to initialize the Klarna Component
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("DOM fully loaded and parsed.");
+
+    const redirectResult = getQueryParam("redirectResult");
+    if (redirectResult) {
+        const inputContainer = document.querySelector(".input-container");
+        const startPaymentButton = document.getElementById("start-payment");
+        const stateContainer = document.getElementById("state-container");
+
+        if (inputContainer) inputContainer.style.display = "none";
+        if (startPaymentButton) startPaymentButton.style.display = "none";
+        if (stateContainer) stateContainer.style.display = "none";
+
+        const klarnaContainer = document.getElementById("klarna-container");
+        if (!klarnaContainer) {
+            console.error("Klarna container not found in the DOM.");
+            return;
+        }
+
+        klarnaContainer.innerHTML = "<p>Processing your payment...</p>";
+
+        try {
+            const detailsResult = await makeDetails({ details: { redirectResult } });
+            showPaymentResult(detailsResult);
+
+            if (detailsResult.resultCode) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error("Error processing redirect result:", error);
+        }
+
+        return;
+    }
 
     const referenceField = document.getElementById("reference");
     const returnUrlField = document.getElementById("returnUrl");
@@ -32,6 +160,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         referenceField.value = reference;
         returnUrlField.placeholder = generateReturnUrl(reference);
     }
+
+    const testCaseSelect = document.getElementById("klarnaTestCase");
+    testCaseSelect?.addEventListener("change", () => {
+        const testCase = KLARNA_US_TEST_CASES[testCaseSelect.value];
+        if (!testCase) return;
+
+        document.getElementById("shopperEmail").value = testCase.email;
+        document.getElementById("telephoneNumber").value = testCase.phone;
+    });
 
     const startPaymentButton = document.getElementById("start-payment");
     if (!startPaymentButton) {
@@ -43,6 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Here we go! button clicked.");
 
         const klarnaOption = document.getElementById("klarnaOption")?.value ;
+        const useRedirectFlow = document.getElementById("klarnaRedirect")?.checked;
 
         if (!klarnaOption) {
             alert("Please select a Klarna payment option.");
@@ -69,7 +207,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const shopperAddressValue = document.getElementById("shopperAddress")?.value;
         const shopperAddress = shopperAddressValue ? JSON.parse(shopperAddressValue) : undefined;
 
-        const recurringProcessingModel = document.getElementById("recurringProcessingModel")?.value || "CardOnFile";
+        const recurringProcessingModel = document.getElementById("recurringProcessingModel")?.value;
         const challengeWindowSize = document.getElementById("challengeWindowSize")?.value || "02";
 
         if (isNaN(value) || value < 0) {
@@ -119,11 +257,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.log("paymentMethodsResponse.paymentMethods:", paymentMethodsResponse.paymentMethods);
             }
             
-            //const klarnaConfiguration = {
-            //    type: klarnaOption,
-            //    useKlarnaWidget: true // When set to true, the Klarna widget is shown. Set to false or leave the configuration object out to initiate a redirect flow.
-            //};
-            const klarnaConfiguration = { type: klarnaOption, useKlarnaWidget: true };
+            const klarnaConfiguration = {
+                type: klarnaOption,
+                ...(useRedirectFlow ? {} : { useKlarnaWidget: true })
+            };
 
             const configObj = {
                 paymentMethodsResponse,
@@ -139,8 +276,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     try {
                         document.getElementById("state-container").style.display = "none";
 
+                        const paymentMethod = { ...state.data.paymentMethod };
+                        if (useRedirectFlow && paymentMethod.subtype === "sdk") {
+                            delete paymentMethod.subtype;
+                        }
+
                         const paymentsReqData = {
                             ...state.data,
+                            paymentMethod,
                             reference,
                             amount: { currency, value },
                             countryCode,
@@ -152,7 +295,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             origin,
                             channel: "Web",
                             storePaymentMethod : storePaymentMethod,
-                            recurringProcessingModel,
+                            ...(recurringProcessingModel && { recurringProcessingModel }),
                             //billingAddress: shopperAddress,
                             //deliveryAddress: shopperAddress,
                             lineItems: [
@@ -250,11 +393,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     console.log("### klarna::onPaymentCompleted:: calling");
                     console.log(result);
 
-                    const klarnaContainer = document.getElementById("klarna-container");
-                    klarnaContainer.innerHTML = `
-                        <h2>Payment Result</h2>
-                        <p><strong>Status:</strong> ${result.resultCode}</p>
-                    `;
+                    showPaymentResult(result);
+
+                },
+                onPaymentFailed: async (result, component) => {
+
+                    console.log("### klarna::onPaymentFailed:: calling");
+                    console.error(result);
+
+                    showPaymentResult(result, "Payment Failed");
 
                 }
             };
@@ -350,7 +497,7 @@ export const renderStoredKlarnaMethods = async (shopperReference) => {
             const shopperReference = document.getElementById("shopperReference")?.value || "guest";
             const shopperEmail = document.getElementById("shopperEmail")?.value || "customer@email.uk";
             const shopperAddress = document.getElementById("shopperAddress")?.value || undefined;
-            const recurringProcessingModel = document.getElementById("recurringProcessingModel")?.value || "CardOnFile";
+            const recurringProcessingModel = document.getElementById("recurringProcessingModel")?.value;
         
             const oneClickReq = {
                 reference: "OneClick Klarna",
@@ -365,7 +512,7 @@ export const renderStoredKlarnaMethods = async (shopperReference) => {
                 shopperReference,
                 channel: "Web",
                 shopperInteraction: "ContAuth",
-                recurringProcessingModel,
+                ...(recurringProcessingModel && { recurringProcessingModel }),
                 shopperLocale,
                 countryCode
             };

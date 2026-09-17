@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const pmReqConfig = {
             countryCode,
             amount: { currency, value },
+            allowedPaymentMethods: ["scheme","googlepay"],
             shopperEmail,
             shopperReference
         };
@@ -88,6 +89,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const googlePayConfiguration = {
                 amount: { value, currency },
                 countryCode,
+                //allowedCardNetworks: ["VISA", "MASTERCARD"],
+                //allowedCardNetworks: ["JCB"],
                 environment: config.environment
             };
             console.log("Google Pay Configuration:", googlePayConfiguration);

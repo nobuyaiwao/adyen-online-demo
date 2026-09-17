@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (referenceField && returnUrlField) {
         const reference = generateReference();
         referenceField.value = reference;
-        returnUrlField.placeholder = generateReturnUrl(reference);
+        returnUrlField.value = generateReturnUrl(reference);
     }
 
     const startPaymentButton = document.getElementById("start-payment");
@@ -132,6 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             returnUrl,
                             origin,
                             channel: "Web",
+                            recurringProcessingModel,
                             billingAddress: {
                                 city: "London",
                                 country: "GB",
@@ -214,8 +215,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     console.log("### paypal::onPaymentCompleted:: calling");
                     console.log(result);
 
-                    const cardContainer = document.getElementById("klarna-container");
-                    cardContainer.innerHTML = `
+                    const paypalContainer = document.getElementById("paypal-container");
+                    if (!paypalContainer) {
+                        console.error("PayPal container not found in the DOM.");
+                        return;
+                    }
+
+                    paypalContainer.innerHTML = `
                         <h2>Payment Result</h2>
                         <p><strong>Status:</strong> ${result.resultCode}</p>
                     `;
