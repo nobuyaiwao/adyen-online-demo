@@ -1,4 +1,5 @@
 .env
+.env.heroku
 .herokuconfig
 src/test
 node_modules/
